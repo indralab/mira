@@ -1,0 +1,101 @@
+"""Generate knowledge-graph-ready triples from template models."""
+
+import itertools as itt
+from typing import TYPE_CHECKING, Iterable, Optional, Set, Tuple
+
+import bioregistry
+from bioregistry import Manager, curie_to_str
+from pydantic import BaseModel
+
+from mira.metamodel import ControlledConversion, NaturalConversion, Template, \
+    TemplateModel
+from mira.metamodel.templates import Config
+from mira.modeling.base import Generator
+
+if TYPE_CHECKING:
+    import pandas
+
+
+class Triple(BaseModel):
+    """Represents a triple of 3 CURIEs."""
+
+    sub: str
+    pred: str
+    obj: str
+
+    def as_tuple(self) -> Tuple[str, str, str]:
+        return self.sub, self.pred, self.obj
+
+    def _prefixes(self, manager: Manager) -> Set[str]:
+        return {manager.parse_curie(k)[0] for k in (self.sub, self.obj, self.pred)}
+
+
+class TriplesGenerator(Generator):
+    """Generates triples from a templated model to include in the DKG."""
+
+    def __init__(
+        self,
+        model: TemplateModel,
+        manager: Optional[Manager] = None,
+        config: Optional[Config] = None,
+    ):
+        super().__init__(model)
+        self.metaregistry = manager or bioregistry.manager
+        self.triples = {}
+        for template in model.templates:
+            for triple in self.iter_triples(template, config=config):
+                if triple.sub == triple.obj:
+                    continue
+                self.triples[triple.as_tuple()] = triple
+        self.prefixes = set(
+            itt.chain.from_iterable(
+                triple._prefixes(self.metaregistry) for triple in self.triples.values()
+            )
+        )
+
+    def to_dataframe(self) -> "pandas.DataFrame":
+        """Get all triples as a pandas dataframe."""
+        import pandas
+
+        columns = ["subject", "predicate", "object"]
+        df = pandas.DataFrame(
+            self.triples,
+            columns=columns,
+        )
+        df = df.drop_duplicates()
+        df = df[df["subject"] != df["object"]]
+        df = df.sort_values(columns)
+        return df
+
+    def iter_triples(
+        self, template: Template, config: Optional[Config] = None
+    ) -> Iterable[Triple]:
+        """Iterate triples from a template."""
+        if isinstance(template, ControlledConversion):
+            for a, b in itt.combinations(
+                (template.subject, template.outcome, template.controller), 2
+            ):
+                yield Triple(
+                    sub=curie_to_str(*a.get_curie(config=config)),
+                    pred="ro:0002323",  # "related to"
+                    obj=curie_to_str(*b.get_curie(config=config)),
+                )
+        elif isinstance(template, NaturalConversion):
+            yield Triple(
+                sub=curie_to_str(*template.subject.get_curie(config=config)),
+                pred="ro:0002323",  # "related to"
+                obj=curie_to_str(*template.outcome.get_curie(config=config)),
+            )
+        else:
+            raise TypeError
+
+
+def main():
+    from mira.examples.sir import sir
+
+    x = TriplesGenerator(sir)
+    print(x.to_dataframe())
+
+
+if __name__ == "__main__":
+    main()
