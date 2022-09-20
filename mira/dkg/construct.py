@@ -30,14 +30,13 @@ from typing import Dict, NamedTuple, Sequence, Union
 import bioontologies
 import bioregistry
 import click
-import pystow
 from bioontologies import obograph
 from tabulate import tabulate
 from tqdm import tqdm
 
+from mira.constants import EDGE_HEADER, MODULE, NODE_HEADER
 from mira.dkg.utils import PREFIXES
 
-MODULE = pystow.module("mira")
 DEMO_MODULE = MODULE.module("demo", "import")
 EDGE_NAMES_PATH = DEMO_MODULE.join(name="relation_info.json")
 UNSTANDARDIZED_NODES_PATH = DEMO_MODULE.join(name="unstandardized_nodes.tsv")
@@ -55,27 +54,6 @@ OBSOLETE = {"oboinowl:ObsoleteClass", "oboinowl:ObsoleteProperty"}
 EDGES_PATHS: Dict[str, Path] = {
     prefix: DEMO_MODULE.join("sources", name=f"edges_{prefix}.tsv") for prefix in PREFIXES
 }
-EDGE_HEADER = (
-    ":START_ID",
-    ":END_ID",
-    ":TYPE",
-    "pred:string",
-    "source:string",
-    "graph:string",
-    "version:string",
-)
-NODE_HEADER = (
-    "id:ID",
-    ":LABEL",
-    "name:string",
-    "synonyms:string[]",
-    "obsolete:boolean",
-    "type:string",
-    "description:string",
-    "xrefs:string[]",
-    "alts:string[]",
-    "version:string",
-)
 LABELS = {
     "http://www.w3.org/2000/01/rdf-schema#isDefinedBy": "is defined by",
     "rdf:type": "type",

@@ -1,12 +1,15 @@
 """Generate knowledge-graph-ready triples from template models."""
 
+import csv
 import itertools as itt
-from typing import TYPE_CHECKING, Iterable, Optional, Set, Tuple
+from pathlib import Path
+from typing import TYPE_CHECKING, Iterable, Optional, Set, Tuple, Union
 
 import bioregistry
 from bioregistry import Manager, curie_to_str
 from pydantic import BaseModel
 
+from mira.constants import EDGE_HEADER
 from mira.metamodel import ControlledConversion, NaturalConversion, Template, \
     TemplateModel
 from mira.metamodel.templates import Config
@@ -14,6 +17,10 @@ from mira.modeling.base import Generator
 
 if TYPE_CHECKING:
     import pandas
+
+RELATIONS = {
+    "ro:0002323": "mereotopologically related to",  # FIXME new relation?
+}
 
 
 class Triple(BaseModel):
@@ -67,9 +74,27 @@ class TriplesGenerator(Generator):
         df = df.sort_values(columns)
         return df
 
-    def iter_triples(
-        self, template: Template, config: Optional[Config] = None
-    ) -> Iterable[Triple]:
+    def write_neo4j_bulk(self, path: Union[str, Path]) -> None:
+        """Write a file that can be bulk imported in neo4j."""
+        with open(path, "w") as file:
+            writer = csv.writer(file, delimiter="\t")
+            writer.writerow(EDGE_HEADER)
+            writer.writerows(self.iter_neo4j_bulk_rows())
+
+    def iter_neo4j_bulk_rows(self):
+        """Iterate over rows that can be written to a neo4j bulk import file."""
+        for _, triple in sorted(self.triples.items()):
+            yield (
+                triple.sub,
+                triple.obj,
+                RELATIONS[triple.pred],
+                triple.pred,
+                "template",  # TODO add extra metadata to models?
+                "template",
+                "",
+            )
+
+    def iter_triples(self, template: Template, config: Optional[Config] = None) -> Iterable[Triple]:
         """Iterate triples from a template."""
         if isinstance(template, ControlledConversion):
             for a, b in itt.combinations(
