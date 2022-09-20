@@ -66,7 +66,7 @@ class TriplesGenerator(Generator):
 
         columns = ["subject", "predicate", "object"]
         df = pandas.DataFrame(
-            self.triples,
+            [t.as_tuple() for t in self.triples.values()],
             columns=columns,
         )
         df = df.drop_duplicates()
@@ -113,14 +113,3 @@ class TriplesGenerator(Generator):
             )
         else:
             raise TypeError
-
-
-def main():
-    from mira.examples.sir import sir
-
-    x = TriplesGenerator(sir)
-    print(x.to_dataframe())
-
-
-if __name__ == "__main__":
-    main()
