@@ -13,7 +13,6 @@ from mira.constants import EDGE_HEADER
 from mira.metamodel import ControlledConversion, NaturalConversion, Template, \
     TemplateModel
 from mira.metamodel.templates import Config
-from mira.modeling.base import Generator
 
 if TYPE_CHECKING:
     import pandas
@@ -37,7 +36,7 @@ class Triple(BaseModel):
         return {manager.parse_curie(k)[0] for k in (self.sub, self.obj, self.pred)}
 
 
-class TriplesGenerator(Generator):
+class TriplesGenerator:
     """Generates triples from a templated model to include in the DKG."""
 
     def __init__(

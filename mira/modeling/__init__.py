@@ -2,7 +2,6 @@ __all__ = ["Model", "Transition", "Variable", "Parameter"]
 
 from mira.metamodel import ControlledConversion, NaturalConversion, \
     TemplateModel
-from mira.modeling.base import Generator
 
 
 class Transition:
@@ -36,7 +35,7 @@ def get_parameter_key(transition_key, action):
 UNHANDLED_TYPES = set()
 
 
-class Model(Generator):
+class Model:
     def __init__(self, template_model: TemplateModel):
         super().__init__(template_model)
         self.variables = {}
