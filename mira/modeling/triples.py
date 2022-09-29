@@ -3,11 +3,9 @@
 import csv
 import itertools as itt
 from pathlib import Path
-from typing import TYPE_CHECKING, Iterable, Optional, Set, Tuple, Union
+from typing import TYPE_CHECKING, Iterable, Optional, Tuple, Union
 
-import bioregistry
 import pystow
-from bioregistry import Manager, curie_to_str
 from pydantic import BaseModel
 
 from mira.constants import EDGE_HEADER
@@ -42,21 +40,12 @@ class Triple(BaseModel):
     def as_tuple(self) -> Tuple[str, str, str]:
         return self.sub, self.pred, self.obj
 
-    def _prefixes(self, manager: Manager) -> Set[str]:
-        return {manager.parse_curie(k)[0] for k in (self.sub, self.obj, self.pred)}
-
 
 class TriplesGenerator:
     """Generates triples from a templated model to include in the DKG."""
 
-    def __init__(
-        self,
-        model: TemplateModel,
-        manager: Optional[Manager] = None,
-        config: Optional[Config] = None,
-    ):
+    def __init__(self, model: TemplateModel, config: Optional[Config] = None):
         self.model = model
-        self.metaregistry = manager or bioregistry.manager
         self.triples = {}
         for template in model.templates:
             for triple in self.iter_triples(template, config=config):
@@ -107,16 +96,24 @@ class TriplesGenerator:
                 for a, b in itt.combinations(
                     (template.subject, template.outcome, controller), 2
                 ):
+                    sub = a.get_curie_str(config=config)
+                    obj = b.get_curie_str(config=config)
+                    if sub.startswith("text:") or obj.startswith("text:"):
+                        continue
                     yield Triple(
-                        sub=a.get_curie_str(config=config),
+                        sub=sub,
                         pred="ro:0002323",  # "related to"
-                        obj=b.get_curie_str(config=config),
+                        obj=obj,
                     )
         elif isinstance(template, NaturalConversion):
+            sub = template.subject.get_curie_str(config=config)
+            obj = template.outcome.get_curie_str(config=config)
+            if sub.startswith("text:") or obj.startswith("text:"):
+                return
             yield Triple(
-                sub=template.subject.get_curie_str(config=config),
+                sub=sub,
                 pred="ro:0002323",  # "related to"
-                obj=template.outcome.get_curie_str(config=config),
+                obj=obj,
             )
         elif isinstance(template, NaturalProduction):
             pass  # No triples
