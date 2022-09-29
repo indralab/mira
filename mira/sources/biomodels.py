@@ -86,7 +86,10 @@ def get_sbml_model(model_id: str) -> str:
 def main():
     """Iterate over COVID-19 models and parse them."""
     import pandas as pd
+    from mira.modeling.triples import TriplesGenerator
+
     query_path = BIOMODELS.join(name="query.tsv")
+    triples_path = BIOMODELS.join(name="triples.tsv")
     if query_path.is_file():
         df = pd.read_csv(query_path, sep="\t")
     else:
@@ -96,6 +99,7 @@ def main():
 
     columns = ["id", "format", "author", "name"]
     rows = []
+    dataframes = []
     for model_id, model_format, model_author, model_name in tqdm(
         df[columns].values, desc="Converting", unit="model"
     ):
@@ -124,6 +128,11 @@ def main():
             m.write(model_module.join(name=f"{model_id}.png"))
             m.write(BIOMODELS.join("images", name=f"{model_id}.png"))
 
+            m = TriplesGenerator(parse_result.template_model, skip_prefixes=["biomodel.species"])
+            triples_df = m.to_dataframe()
+            triples_df["model"] = model_id
+            dataframes.append(triples_df)
+
             rows.append(
                 (
                     model_id,
@@ -135,6 +144,9 @@ def main():
         else:
             # tqdm.write(f"[{model_id}] unhandled model format: {model_format}")
             continue
+
+    cat_triples_df = pd.concat(dataframes)
+    cat_triples_df.to_csv(triples_path, sep="\t", index=False)
 
     summary_columns = ["model_id", "name", "# templates", "template_types"]
     summary_df = pd.DataFrame(rows, columns=summary_columns).sort_values(
