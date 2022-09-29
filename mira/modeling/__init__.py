@@ -36,8 +36,8 @@ UNHANDLED_TYPES = set()
 
 
 class Model:
-    def __init__(self, template_model: TemplateModel):
-        super().__init__(template_model)
+    def __init__(self, template_model):
+        self.template_model = template_model
         self.variables = {}
         self.parameters = {}
         self.transitions = {}
