@@ -23,6 +23,10 @@ from mira.metamodel.templates import Config
 if TYPE_CHECKING:
     import pandas
 
+__all__ = [
+    "TriplesGenerator",
+]
+
 MODULE = pystow.module("mira")
 
 RELATIONS = {
@@ -48,7 +52,7 @@ class TriplesGenerator:
         self.model = model
         self.triples = {}
         for template in model.templates:
-            for triple in self.iter_triples(template, config=config):
+            for triple in iter_triples(template, config=config):
                 if triple.sub == triple.obj:
                     continue
                 self.triples[triple.as_tuple()] = triple
@@ -85,39 +89,42 @@ class TriplesGenerator:
                 for _, triple in sorted(self.triples.items())
             )
 
-    def iter_triples(self, template: Template, config: Optional[Config] = None) -> Iterable[Triple]:
-        """Iterate triples from a template."""
-        if isinstance(template, (ControlledConversion, GroupedControlledConversion)):
-            if isinstance(template, ControlledConversion):
-                controllers = [template.controller]
-            else:
-                controllers = template.controllers
-            for controller in controllers:
-                for a, b in itt.combinations(
-                    (template.subject, template.outcome, controller), 2
-                ):
-                    sub = a.get_curie_str(config=config)
-                    obj = b.get_curie_str(config=config)
-                    if sub.startswith("text:") or obj.startswith("text:"):
-                        continue
-                    yield Triple(
-                        sub=sub,
-                        pred="ro:0002323",  # "related to"
-                        obj=obj,
-                    )
-        elif isinstance(template, NaturalConversion):
-            sub = template.subject.get_curie_str(config=config)
-            obj = template.outcome.get_curie_str(config=config)
-            if sub.startswith("text:") or obj.startswith("text:"):
-                return
-            yield Triple(
-                sub=sub,
-                pred="ro:0002323",  # "related to"
-                obj=obj,
-            )
-        elif isinstance(template, NaturalProduction):
-            pass  # No triples
-        elif isinstance(template, NaturalDegradation):
-            pass  # No triples
+
+def iter_triples(
+    template: Template, config: Optional[Config] = None
+) -> Iterable[Triple]:
+    """Iterate triples from a template."""
+    if isinstance(template, (ControlledConversion, GroupedControlledConversion)):
+        if isinstance(template, ControlledConversion):
+            controllers = [template.controller]
         else:
-            raise TypeError
+            controllers = template.controllers
+        for controller in controllers:
+            for a, b in itt.combinations(
+                (template.subject, template.outcome, controller), 2
+            ):
+                sub = a.get_curie_str(config=config)
+                obj = b.get_curie_str(config=config)
+                if sub.startswith("text:") or obj.startswith("text:"):
+                    continue
+                yield Triple(
+                    sub=sub,
+                    pred="ro:0002323",  # "related to"
+                    obj=obj,
+                )
+    elif isinstance(template, NaturalConversion):
+        sub = template.subject.get_curie_str(config=config)
+        obj = template.outcome.get_curie_str(config=config)
+        if sub.startswith("text:") or obj.startswith("text:"):
+            return
+        yield Triple(
+            sub=sub,
+            pred="ro:0002323",  # "related to"
+            obj=obj,
+        )
+    elif isinstance(template, NaturalProduction):
+        pass  # No triples
+    elif isinstance(template, NaturalDegradation):
+        pass  # No triples
+    else:
+        raise TypeError
