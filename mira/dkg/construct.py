@@ -30,6 +30,7 @@ from typing import Dict, NamedTuple, Sequence, Union
 import bioontologies
 import bioregistry
 import click
+import pystow
 from bioontologies import obograph
 from tabulate import tabulate
 from tqdm import tqdm
@@ -37,6 +38,7 @@ from tqdm import tqdm
 from mira.constants import EDGE_HEADER, MODULE, NODE_HEADER
 from mira.dkg.utils import PREFIXES
 
+MODULE = pystow.module("mira")
 DEMO_MODULE = MODULE.module("demo", "import")
 EDGE_NAMES_PATH = DEMO_MODULE.join(name="relation_info.json")
 UNSTANDARDIZED_NODES_PATH = DEMO_MODULE.join(name="unstandardized_nodes.tsv")

@@ -6,16 +6,26 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Iterable, Optional, Set, Tuple, Union
 
 import bioregistry
+import pystow
 from bioregistry import Manager, curie_to_str
 from pydantic import BaseModel
 
 from mira.constants import EDGE_HEADER
-from mira.metamodel import ControlledConversion, NaturalConversion, Template, \
-    TemplateModel
+from mira.metamodel import (
+    ControlledConversion,
+    GroupedControlledConversion,
+    NaturalConversion,
+    NaturalDegradation,
+    NaturalProduction,
+    Template,
+    TemplateModel,
+)
 from mira.metamodel.templates import Config
 
 if TYPE_CHECKING:
     import pandas
+
+MODULE = pystow.module("mira")
 
 RELATIONS = {
     "ro:0002323": "mereotopologically related to",  # FIXME new relation?
@@ -45,7 +55,7 @@ class TriplesGenerator:
         manager: Optional[Manager] = None,
         config: Optional[Config] = None,
     ):
-        super().__init__(model)
+        self.model = model
         self.metaregistry = manager or bioregistry.manager
         self.triples = {}
         for template in model.templates:
@@ -53,11 +63,6 @@ class TriplesGenerator:
                 if triple.sub == triple.obj:
                     continue
                 self.triples[triple.as_tuple()] = triple
-        self.prefixes = set(
-            itt.chain.from_iterable(
-                triple._prefixes(self.metaregistry) for triple in self.triples.values()
-            )
-        )
 
     def to_dataframe(self) -> "pandas.DataFrame":
         """Get all triples as a pandas dataframe."""
@@ -78,19 +83,17 @@ class TriplesGenerator:
         with open(path, "w") as file:
             writer = csv.writer(file, delimiter="\t")
             writer.writerow(EDGE_HEADER)
-            writer.writerows(self.iter_neo4j_bulk_rows())
-
-    def iter_neo4j_bulk_rows(self):
-        """Iterate over rows that can be written to a neo4j bulk import file."""
-        for _, triple in sorted(self.triples.items()):
-            yield (
-                triple.sub,
-                triple.obj,
-                RELATIONS[triple.pred],
-                triple.pred,
-                "template",  # TODO add extra metadata to models?
-                "template",
-                "",
+            writer.writerows(
+                (
+                    triple.sub,
+                    triple.obj,
+                    RELATIONS[triple.pred],
+                    triple.pred,
+                    "template",  # TODO add extra metadata to models?
+                    "template",
+                    "",
+                )
+                for _, triple in sorted(self.triples.items())
             )
 
     def iter_triples(self, template: Template, config: Optional[Config] = None) -> Iterable[Triple]:
@@ -110,5 +113,11 @@ class TriplesGenerator:
                 pred="ro:0002323",  # "related to"
                 obj=curie_to_str(*template.outcome.get_curie(config=config)),
             )
+        elif isinstance(template, GroupedControlledConversion):
+            pass
+        elif isinstance(template, NaturalProduction):
+            pass
+        elif isinstance(template, NaturalDegradation):
+            pass
         else:
             raise TypeError

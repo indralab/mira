@@ -1,12 +1,6 @@
 """Constants used across MIRA."""
 
-import pystow
-
-__all__ = ["MODULE", "NODE_HEADER", "EDGE_HEADER"]
-
-#: The PyStow module which allows for system-independent
-#: creation of stable file paths.
-MODULE = pystow.module("mira")
+__all__ = ["NODE_HEADER", "EDGE_HEADER"]
 
 #: The used for the nodes files in the neo4j bulk import
 NODE_HEADER = (
