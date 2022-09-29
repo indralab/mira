@@ -98,26 +98,29 @@ class TriplesGenerator:
 
     def iter_triples(self, template: Template, config: Optional[Config] = None) -> Iterable[Triple]:
         """Iterate triples from a template."""
-        if isinstance(template, ControlledConversion):
-            for a, b in itt.combinations(
-                (template.subject, template.outcome, template.controller), 2
-            ):
-                yield Triple(
-                    sub=curie_to_str(*a.get_curie(config=config)),
-                    pred="ro:0002323",  # "related to"
-                    obj=curie_to_str(*b.get_curie(config=config)),
-                )
+        if isinstance(template, (ControlledConversion, GroupedControlledConversion)):
+            if isinstance(template, ControlledConversion):
+                controllers = [template.controller]
+            else:
+                controllers = template.controllers
+            for controller in controllers:
+                for a, b in itt.combinations(
+                    (template.subject, template.outcome, controller), 2
+                ):
+                    yield Triple(
+                        sub=a.get_curie_str(config=config),
+                        pred="ro:0002323",  # "related to"
+                        obj=b.get_curie_str(config=config),
+                    )
         elif isinstance(template, NaturalConversion):
             yield Triple(
-                sub=curie_to_str(*template.subject.get_curie(config=config)),
+                sub=template.subject.get_curie_str(config=config),
                 pred="ro:0002323",  # "related to"
-                obj=curie_to_str(*template.outcome.get_curie(config=config)),
+                obj=template.outcome.get_curie_str(config=config),
             )
-        elif isinstance(template, GroupedControlledConversion):
-            pass
         elif isinstance(template, NaturalProduction):
-            pass
+            pass  # No triples
         elif isinstance(template, NaturalDegradation):
-            pass
+            pass  # No triples
         else:
             raise TypeError
