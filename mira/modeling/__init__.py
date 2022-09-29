@@ -1,7 +1,11 @@
 __all__ = ["Model", "Transition", "Variable", "Parameter"]
 
-from mira.metamodel import ControlledConversion, NaturalConversion, \
-    TemplateModel
+import logging
+
+from mira.metamodel import (
+    ControlledConversion, NaturalConversion, NaturalProduction, NaturalDegradation,
+    GroupedControlledConversion,
+)
 
 
 class Transition:
