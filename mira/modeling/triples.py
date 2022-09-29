@@ -5,7 +5,6 @@ import itertools as itt
 from pathlib import Path
 from typing import TYPE_CHECKING, Iterable, Optional, Tuple, Union
 
-import pystow
 from pydantic import BaseModel
 
 from mira.constants import EDGE_HEADER
@@ -26,8 +25,6 @@ if TYPE_CHECKING:
 __all__ = [
     "TriplesGenerator",
 ]
-
-MODULE = pystow.module("mira")
 
 RELATIONS = {
     "ro:0002323": "mereotopologically related to",  # FIXME new relation?
