@@ -3,7 +3,7 @@
 import unittest
 
 from mira.examples.sir import sir
-from mira.modeling.triples import TriplesGenerator
+from mira.modeling.triples import TriplesGenerator, RELATED_TO_CURIE
 
 
 class TestTriplesGenerator(unittest.TestCase):
@@ -18,12 +18,12 @@ class TestTriplesGenerator(unittest.TestCase):
             {
                 (
                     "ido:0000511",
-                    "ro:0002323",
-                    "ido:00005",
+                    RELATED_TO_CURIE,
+                    "ido:0000592",
                 ),
                 (
                     "ido:0000514",
-                    "ro:0002323",
+                    RELATED_TO_CURIE,
                     "ido:0000511",
                 ),
             },

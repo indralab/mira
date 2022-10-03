@@ -26,8 +26,10 @@ __all__ = [
     "TriplesGenerator",
 ]
 
+RELATED_TO_CURIE = "ro:0002323"
+
 RELATIONS = {
-    "ro:0002323": "mereotopologically related to",  # FIXME new relation?
+    RELATED_TO_CURIE: "mereotopologically related to",  # FIXME new relation?
 }
 
 
@@ -109,7 +111,9 @@ class TriplesGenerator:
         self, template: Template, config: Optional[Config] = None
     ) -> Iterable[Triple]:
         """Iterate triples from a template."""
-        if isinstance(template, (ControlledConversion, GroupedControlledConversion)):
+        if isinstance(
+            template, (ControlledConversion, GroupedControlledConversion)
+        ):
             if isinstance(template, ControlledConversion):
                 controllers = [template.controller]
             else:
@@ -127,17 +131,20 @@ class TriplesGenerator:
                         continue
                     yield Triple(
                         sub=f"{sub_prefix}:{sub_id}",
-                        pred="ro:0002323",  # "related to"
+                        pred=RELATED_TO_CURIE,
                         obj=f"{obj_prefix}:{obj_id}",
                     )
         elif isinstance(template, NaturalConversion):
             sub_prefix, sub_id = template.subject.get_curie(config=config)
             obj_prefix, obj_id = template.outcome.get_curie(config=config)
-            if sub_prefix in self.skip_prefixes or obj_prefix in self.skip_prefixes:
+            if (
+                sub_prefix in self.skip_prefixes
+                or obj_prefix in self.skip_prefixes
+            ):
                 return
             yield Triple(
                 sub=f"{sub_prefix}:{sub_id}",
-                pred="ro:0002323",  # "related to"
+                pred=RELATED_TO_CURIE,
                 obj=f"{obj_prefix}:{obj_id}",
             )
         elif isinstance(template, NaturalProduction):
