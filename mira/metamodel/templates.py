@@ -49,6 +49,7 @@ class Config(BaseModel):
 DEFAULT_CONFIG = Config(
     prefix_priority=[
         "ido",
+        "ncit",
     ],
 )
 
@@ -79,12 +80,16 @@ class Concept(BaseModel):
         if config is None:
             config = DEFAULT_CONFIG
         if not self.identifiers:
-            return self.name
+            return "", self.name
         for prefix in config.prefix_priority:
             identifier = self.identifiers.get(prefix)
             if identifier:
                 return prefix, identifier
-        return sorted(self.identifiers.items())[0]
+        return tuple(sorted(self.identifiers.items())[0])
+
+    def get_curie_str(self, config: Optional[Config] = None) -> str:
+        """Get the priority prefix/identifier as a CURIE string."""
+        return ":".join(self.get_curie(config=config))
 
     def get_key(self, config: Optional[Config] = None):
         return (
