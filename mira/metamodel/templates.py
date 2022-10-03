@@ -49,6 +49,7 @@ class Config(BaseModel):
 DEFAULT_CONFIG = Config(
     prefix_priority=[
         "ido",
+        "ncit",
     ],
 )
 
