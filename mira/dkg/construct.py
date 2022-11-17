@@ -60,6 +60,7 @@ NODES_PATH = DEMO_MODULE.join(name="nodes.tsv.gz")
 EDGES_PATH = DEMO_MODULE.join(name="edges.tsv.gz")
 EMBEDDINGS_PATH = DEMO_MODULE.join(name="embeddings.tsv.gz")
 METAREGISTRY_PATH = DEMO_MODULE.join(name="metaregistry.json")
+GILDA_TERMS_PATH = DEMO_MODULE.join(name="gilda_terms.tsv.gz")
 OBSOLETE = {"oboinowl:ObsoleteClass", "oboinowl:ObsoleteProperty"}
 EDGES_PATHS: Dict[str, Path] = {
     prefix: DEMO_MODULE.join("sources", name=f"edges_{prefix}.tsv") for prefix in PREFIXES
