@@ -11,6 +11,7 @@ from collections import defaultdict
 from mira.dkg.utils import PREFIXES
 import biomappings
 from gilda.grounder import Grounder, ScoredMatch
+from biomappings.resources import append_prediction_tuples, PredictionTuple
 from mira.dkg.construct import GILDA_TERMS_PATH
 
 source_whitelist = {
@@ -121,16 +122,22 @@ def main():
             if prefix == xref_prefix or xref_graph.has_edge(curie, xref_curie):
                 continue
             rows.append(
-                (
-                    curie,
-                    name,
-                    term.get_curie(),
-                    term.entry_name,
+                PredictionTuple(
+                    source_prefix=prefix,
+                    source_id=identifier,
+                    source_name=name,
+                    relation="skos:exactMatch",
+                    target_prefix=xref_prefix,
+                    target_identifier=xref_id,
+                    target_name=term.entry_name,
+                    type="lexical",
+                    confidence=scored_match.score,
+                    source="mira",
                 )
             )
-    odf = pd.DataFrame(
-        rows, columns=["curie", "name", "xref_curie", "xref_name"]
-    )
+
+    append_prediction_tuples(rows)
+    odf = pd.DataFrame(rows)
     odf.to_csv("/Users/cthoyt/Desktop/lexical.tsv", sep="\t", index=False)
 
 
