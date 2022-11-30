@@ -21,7 +21,6 @@ Then, restart the neo4j service with homebrew ``brew services neo4j restart``
 
 import csv
 import gzip
-import itertools as itt
 import json
 import pickle
 from collections import Counter, defaultdict
@@ -31,10 +30,11 @@ from pathlib import Path
 from typing import Dict, NamedTuple, Sequence, Union
 
 import bioontologies
+import biomappings
 import click
 import pystow
 from bioontologies import obograph
-from bioregistry import Manager, manager
+from bioregistry import manager
 from tabulate import tabulate
 from tqdm import tqdm
 from typing_extensions import Literal
@@ -273,6 +273,9 @@ def main(add_xref_edges: bool, summaries: bool, do_upload: bool, refresh: bool):
         else:
             return curie_
 
+    biomappings_xref_graph = biomappings.get_true_graph()
+    added_biomappings = 0
+
     for prefix in PREFIXES:
         edges = []
 
@@ -339,6 +342,17 @@ def main(add_xref_edges: bool, summaries: bool, do_upload: bool, refresh: bool):
                     for pred_curie, val_curie in properties:
                         property_predicates.append(pred_curie)
                         property_values.append(val_curie)
+
+                    xref_predicates, xref_references = [], []
+                    for xref in node.xrefs or []:
+                        if xref.prefix:
+                            xref_predicates.append(xref.pred)
+                            xref_references.append(xref.curie)
+                    for xref_curie, data in biomappings_xref_graph.edges(node.curie, data=True):
+                        added_biomappings += 1
+                        xref_predicates.append(data["relation"])
+                        xref_references.append(xref_curie)
+
                     nodes[curie] = NodeInfo(
                         curie=node.curie,
                         prefix=node.prefix,
@@ -356,14 +370,12 @@ def main(add_xref_edges: bool, summaries: bool, do_upload: bool, refresh: bool):
                         .replace('"', "")
                         .replace("\n", " ")
                         .replace("  ", " "),
-                        xrefs=";".join(xref.curie for xref in node.xrefs if xref.prefix),
+                        xrefs=";".join(xref_references),
                         alts=";".join(node.alternative_ids),
                         version=version or "",
                         property_predicates=";".join(property_predicates),
                         property_values=";".join(property_values),
-                        xref_types=";".join(
-                            xref.pred for xref in node.xrefs or [] if xref.prefix
-                        ),
+                        xref_types=";".join(xref_predicates),
                         synonym_types=";".join(
                             synonym.pred for synonym in node.synonyms
                         ),
@@ -534,6 +546,8 @@ def main(add_xref_edges: bool, summaries: bool, do_upload: bool, refresh: bool):
             writer.writerow(EDGE_HEADER)
             writer.writerows(edges)
         tqdm.write(f"output edges to {edges_path}")
+
+    tqdm.write(f"added {added_biomappings:,} mappings from Biomappings")
 
     with gzip.open(NODES_PATH, "wt") as file:
         writer = csv.writer(file, delimiter="\t", quoting=csv.QUOTE_MINIMAL)
