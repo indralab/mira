@@ -1,18 +1,18 @@
 """A script to propose equivalent nodes in the DKG that aren't already mapped."""
 
+from collections import defaultdict
 from typing import List
 
-import bioregistry
-from mira.dkg.construct import NODES_PATH
-import pandas as pd
-from tqdm import tqdm
-import networkx as nx
-from collections import defaultdict
-from mira.dkg.utils import PREFIXES
 import biomappings
+import bioregistry
+import networkx as nx
+import pandas as pd
+from biomappings.resources import PredictionTuple, append_prediction_tuples
 from gilda.grounder import Grounder, ScoredMatch
-from biomappings.resources import append_prediction_tuples, PredictionTuple
-from mira.dkg.construct import GILDA_TERMS_PATH
+from tqdm import tqdm
+
+from mira.dkg.construct import GILDA_TERMS_PATH, NODES_PATH
+from mira.dkg.utils import PREFIXES
 
 source_whitelist = {
     "apollosv",
@@ -51,6 +51,7 @@ blacklist = {
 
 
 def main():
+    """Propose mappings for curation in Biomappings."""
     imported_prefixes = set(PREFIXES)
 
     grounder = Grounder(GILDA_TERMS_PATH)
@@ -137,8 +138,6 @@ def main():
             )
 
     append_prediction_tuples(rows)
-    odf = pd.DataFrame(rows)
-    odf.to_csv("/Users/cthoyt/Desktop/lexical.tsv", sep="\t", index=False)
 
 
 if __name__ == "__main__":
