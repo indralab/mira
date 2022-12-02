@@ -9,7 +9,6 @@ from pathlib import Path
 from typing import Optional, Set
 
 import bioregistry
-import bioregistry.app.impl
 import click
 from bioregistry import Manager
 from tqdm import tqdm
