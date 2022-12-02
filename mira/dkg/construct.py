@@ -348,10 +348,19 @@ def main(add_xref_edges: bool, summaries: bool, do_upload: bool, refresh: bool):
                         if xref.prefix:
                             xref_predicates.append(xref.pred)
                             xref_references.append(xref.curie)
-                    for xref_curie, data in biomappings_xref_graph.edges(node.curie, data=True):
-                        added_biomappings += 1
-                        xref_predicates.append(data["relation"])
-                        xref_references.append(xref_curie)
+
+                    if node.curie in biomappings_xref_graph:
+                        for xref_curie in biomappings_xref_graph.neighbors(node.curie):
+                            if ":" not in xref_curie:
+                                continue
+                            added_biomappings += 1
+                            xref_predicate = biomappings_xref_graph.edges[node.curie, xref_curie][
+                                "relation"
+                            ]
+                            if xref_predicate == "speciesSpecific":
+                                xref_predicate = "debio:0000003"
+                            xref_predicates.append(xref_predicate)
+                            xref_references.append(xref_curie)
 
                     nodes[curie] = NodeInfo(
                         curie=node.curie,
