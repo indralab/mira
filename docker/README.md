@@ -16,6 +16,11 @@ If you want to test with local files, put `nodes.tsv.gz` and `edges.tsv.gz` in
 this folder and use:
 
 ```shell
+# Get graph data
+cp ~/.data/mira/demo/import/nodes.tsv.gz nodes.tsv.gz
+cp ~/.data/mira/demo/import/edges.tsv.gz edges.tsv.gz
+
+# Build docker
 docker build --file Dockerfile.local --tag mira_dkg:latest .
 ```
 
