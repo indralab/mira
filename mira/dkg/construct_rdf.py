@@ -5,10 +5,11 @@ import gzip
 
 import click
 import rdflib
-from rdflib import DC, DCTERMS, FOAF, OWL, RDF, RDFS, SKOS, Literal
+from rdflib import DC, DCTERMS, FOAF, OWL, RDF, RDFS, SKOS, Literal, Namespace
 from tqdm import tqdm
 from tqdm.contrib.logging import logging_redirect_tqdm
 
+from mira.dkg.askemo.api import REFERENCED_BY_LATEX, REFERENCED_BY_SYMBOL
 from mira.dkg.construct import DEMO_MODULE, EDGES_PATH, NODES_PATH, upload_s3
 
 RDF_TTL_PATH = DEMO_MODULE.join(name="dkg.ttl.gz")
@@ -21,15 +22,22 @@ NAMESPACES = {
     "rdfs": RDFS,
     "skos": SKOS,
     "foaf": FOAF,
+    "askemo": Namespace("https://indralab.github.io/mira/ontology/"),
 }
 SKIP_XREFS = {
     # Should be fixed in https://github.com/geneontology/go-ontology/pull/24148
     # and after HP re-imports GO
     "doi:10.1002/(SICI)1097-4687(199608)229:2<121::AID-JMOR1>3.0.CO;2-4",
 }
+REMAPPING = {
+    REFERENCED_BY_SYMBOL: "debio:0000030",
+    REFERENCED_BY_LATEX: "debio:0000031",
+}
 
 
 def _ref(s: str):
+    if s in REMAPPING:
+        s = REMAPPING[s]
     prefix, identifier = s.split(":", 1)
     namespace = NAMESPACES.get(prefix)
     if namespace:
@@ -39,6 +47,8 @@ def _ref(s: str):
 
 def _construct_rdf(upload: bool):
     graph = rdflib.Graph()
+    for prefix, namespace in NAMESPACES.items():
+        graph.namespace_manager.bind(prefix, namespace)
 
     prefixes = {"bioregistry"}
     with gzip.open(NODES_PATH, "rt") as file:
